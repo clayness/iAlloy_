@@ -27,7 +27,6 @@ import edu.utexas.ece.feature.GetDepInCmd;
 import edu.utexas.ece.feature.GetDepInCmd.SingleDepOutput;
 import edu.utexas.ece.feature.ReuseGroupSol;
 import parser.util.AlloyUtil;
-import parser.util.StringUtil;
 
 /**
  * iAlloy entry
@@ -46,16 +45,14 @@ public class AlloyMain {
     /** Main method */
     public static void main(String[] args) throws Exception {
         // Analyze file path
-        String modelRootPath = args[0];
-        String[] elementList = modelRootPath.split(SEP);
-        String modelName = elementList[elementList.length - 1];
-        String csRootPath = StringUtil.beforeSubstring(modelRootPath, SEP + MODELS_FOLD, true);
-        String dependRootPath = csRootPath + SEP + DEPEND_FOLD + SEP + modelName;
-        String paramRootPath = csRootPath + SEP + PARAM_FOLD + SEP + modelName;
-        String xmlRootPath = csRootPath + SEP + XML_FOLD + SEP + modelName;
+        Path modelRootPath = Paths.get(args[0]);
+        String modelName = modelRootPath.getFileName().toString();
+        Path csRootPath = modelRootPath.getParent().getParent();
+        Path dependRootPath = csRootPath.resolve(DEPEND_FOLD).resolve(modelName);
+        Path paramRootPath = csRootPath.resolve(PARAM_FOLD).resolve(modelName);
+        Path xmlRootPath = csRootPath.resolve(XML_FOLD).resolve(modelName);
 
-        for (String dir : new String[] { dependRootPath, paramRootPath, xmlRootPath }) {
-            Path p = Paths.get(dir);
+        for (Path p : new Path[] { dependRootPath, paramRootPath, xmlRootPath }) {
             if (Files.exists(p)) {
                 try (Stream<Path> walk = Files.walk(p)) {
                     walk.sorted(Comparator.reverseOrder())
@@ -72,14 +69,14 @@ public class AlloyMain {
         int totalRerun = 0, totalReuse = 0;
         int totalCmd = 0, totalRerunCmd = 0;
 
-        File[] modelDirs = new File(modelRootPath).listFiles();
+        File[] modelDirs = modelRootPath.toFile().listFiles();
         Arrays.sort(modelDirs);
         for (File modelDir : modelDirs) {
-            String modelPath = modelDir.getAbsolutePath() + SEP + modelName + ".als";
+            Path modelPath = modelDir.toPath().resolve(modelName + ".als");
 
             // Run alloy and count time consumption
             long startTime = System.currentTimeMillis();
-            CompModule module = AlloyUtil.compileAlloyModule(modelPath);
+            CompModule module = AlloyUtil.compileAlloyModule(modelPath.toString());
             GetDepInCmd depCmd = new GetDepInCmd();
             List<SingleDepOutput> output4Dep = depCmd.collectDep(module, dependRootPath, modelName);
             ReuseGroupSol reuseGroup = new ReuseGroupSol(output4Dep, xmlRootPath, paramRootPath, modelName, module,
@@ -88,7 +85,7 @@ public class AlloyMain {
             long stopTime = System.currentTimeMillis();
             long executeTime = stopTime - startTime;
 
-            String[] tmpElementList = modelPath.split(SEP);
+            String[] tmpElementList = modelPath.toAbsolutePath().toString().split(SEP);
             String version = tmpElementList[tmpElementList.length - 2];
 
             totalCmd += module.getAllCommands().size();

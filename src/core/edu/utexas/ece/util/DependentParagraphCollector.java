@@ -13,14 +13,15 @@
 
 package edu.utexas.ece.util;
 
-import alloyfl.coverage.visitor.DependencyAnalyzer;
-import edu.mit.csail.sdg.parser.CompModule;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.Queue;
 import java.util.Set;
 import java.util.stream.Collectors;
+
+import alloyfl.coverage.visitor.DependencyAnalyzer;
+import edu.mit.csail.sdg.parser.CompModule;
 import parser.ast.nodes.ModelUnit;
 import parser.ast.nodes.Node;
 import parser.ast.nodes.Paragraph;
@@ -32,58 +33,58 @@ import parser.ast.nodes.Paragraph;
  * @version 1.0
  */
 public class DependentParagraphCollector {
-  public static Collection<Node> collect4open(ModelUnit modelUnit, Paragraph invokedParagraph) {
-    DependencyAnalyzer dependencyAnalyzer = new DependencyAnalyzer(modelUnit);
+    public static Collection<Node> collect4open(ModelUnit modelUnit, Paragraph invokedParagraph) {
+        DependencyAnalyzer dependencyAnalyzer = new DependencyAnalyzer(modelUnit);
 
-    Set<Node> res = new HashSet<Node>();
-    res.addAll(modelUnit.getFactDeclList());
-    res.add(invokedParagraph);
+        Set<Node> res = new HashSet<Node>();
+        res.addAll(modelUnit.getFactDeclList());
+        res.add(invokedParagraph);
 
-    Queue<Paragraph> invokedParagraphs = new LinkedList<>();
-    invokedParagraphs.addAll(modelUnit.getFactDeclList());
-    invokedParagraphs.add(invokedParagraph);
+        Queue<Paragraph> invokedParagraphs = new LinkedList<>();
+        invokedParagraphs.addAll(modelUnit.getFactDeclList());
+        invokedParagraphs.add(invokedParagraph);
 
-    while (!invokedParagraphs.isEmpty()) {
-      Paragraph toVisit = invokedParagraphs.poll();
-      toVisit.accept(dependencyAnalyzer, null);
-      dependencyAnalyzer
-          .getUsedParagraphs()
-          .forEach(
-              paragraph -> {
-                invokedParagraphs.offer(paragraph);
-                res.add(paragraph);
-              });
-      dependencyAnalyzer.clearUsedParagraphs();
+        while (!invokedParagraphs.isEmpty()) {
+            Paragraph toVisit = invokedParagraphs.poll();
+            toVisit.accept(dependencyAnalyzer, null);
+            dependencyAnalyzer
+                              .getUsedParagraphs()
+                              .forEach(
+                                      paragraph -> {
+                                          invokedParagraphs.offer(paragraph);
+                                          res.add(paragraph);
+                                      });
+            dependencyAnalyzer.clearUsedParagraphs();
+        }
+        res.addAll(dependencyAnalyzer.getUsedSigs());
+        return res;
     }
-    res.addAll(dependencyAnalyzer.getUsedSigs());
-    return res;
-  }
 
-  public static Collection<Node> collect(CompModule module, Paragraph invokedParagraph) {
-    ModelUnit modelUnit = new ModelUnit(null, module);
-    DependencyAnalyzer dependencyAnalyzer = new DependencyAnalyzer(modelUnit);
+    public static Collection<Node> collect(CompModule module, Paragraph invokedParagraph) {
+        ModelUnit modelUnit = new ModelUnit(null, module);
+        DependencyAnalyzer dependencyAnalyzer = new DependencyAnalyzer(modelUnit);
 
-    Set<Node> res = modelUnit.getOpenDeclList().stream().distinct().collect(Collectors.toSet());
-    res.addAll(modelUnit.getFactDeclList());
-    res.add(invokedParagraph);
+        Set<Node> res = modelUnit.getOpenDeclList().stream().distinct().collect(Collectors.toSet());
+        res.addAll(modelUnit.getFactDeclList());
+        res.add(invokedParagraph);
 
-    Queue<Paragraph> invokedParagraphs = new LinkedList<>();
-    invokedParagraphs.addAll(modelUnit.getFactDeclList());
-    invokedParagraphs.add(invokedParagraph);
+        Queue<Paragraph> invokedParagraphs = new LinkedList<>();
+        invokedParagraphs.addAll(modelUnit.getFactDeclList());
+        invokedParagraphs.add(invokedParagraph);
 
-    while (!invokedParagraphs.isEmpty()) {
-      Paragraph toVisit = invokedParagraphs.poll();
-      toVisit.accept(dependencyAnalyzer, null);
-      dependencyAnalyzer
-          .getUsedParagraphs()
-          .forEach(
-              paragraph -> {
-                invokedParagraphs.offer(paragraph);
-                res.add(paragraph);
-              });
-      dependencyAnalyzer.clearUsedParagraphs();
+        while (!invokedParagraphs.isEmpty()) {
+            Paragraph toVisit = invokedParagraphs.poll();
+            toVisit.accept(dependencyAnalyzer, null);
+            dependencyAnalyzer
+                              .getUsedParagraphs()
+                              .forEach(
+                                      paragraph -> {
+                                          invokedParagraphs.offer(paragraph);
+                                          res.add(paragraph);
+                                      });
+            dependencyAnalyzer.clearUsedParagraphs();
+        }
+        res.addAll(dependencyAnalyzer.getUsedSigs());
+        return res;
     }
-    res.addAll(dependencyAnalyzer.getUsedSigs());
-    return res;
-  }
 }

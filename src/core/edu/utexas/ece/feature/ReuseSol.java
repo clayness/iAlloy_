@@ -13,21 +13,20 @@
 
 package edu.utexas.ece.feature;
 
-import edu.mit.csail.sdg.alloy4.A4Reporter;
-import edu.mit.csail.sdg.ast.Command;
-import edu.mit.csail.sdg.ast.Module;
-import edu.mit.csail.sdg.parser.CompModule;
-import edu.mit.csail.sdg.translator.A4Options;
-import edu.mit.csail.sdg.translator.A4Solution;
-import edu.mit.csail.sdg.translator.TranslateAlloyToKodkod;
-import edu.utexas.ece.feature.GetDepInCmd.SingleDepOutput;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
+import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
+import edu.mit.csail.sdg.ast.Command;
+import edu.mit.csail.sdg.ast.Module;
+import edu.mit.csail.sdg.parser.CompModule;
+import edu.mit.csail.sdg.translator.A4Solution;
+import edu.utexas.ece.feature.GetDepInCmd.SingleDepOutput;
 
 /**
  * Solution Reuse in iAlloy
@@ -37,121 +36,91 @@ import java.util.Set;
  */
 public abstract class ReuseSol {
 
-  public static final String SEP = File.separator;
+    public static final String SEP = File.separator;
 
-  public List<SingleDepOutput> output4Dep;
-  public String xmlRoot;
-  public String paramRoot;
-  public String modelName;
-  public CompModule module;
-  public String modelPath;
-  public int rerun;
-  public int reuse;
+    public List<SingleDepOutput> output4Dep;
+    public Path xmlRoot;
+    public Path paramRoot;
+    public String modelName;
+    public CompModule module;
+    public Path modelPath;
+    public int rerun;
+    public int reuse;
 
-  public ReuseSol(
-      List<SingleDepOutput> output4Dep,
-      String modelXmlRoot,
-      String paramRoot,
-      String modelName,
-      CompModule module,
-      String modelPath) {
-    this.output4Dep = output4Dep;
-    this.xmlRoot = modelXmlRoot;
-    this.paramRoot = paramRoot;
-    this.modelName = modelName;
-    this.module = module;
-    this.modelPath = modelPath;
-    rerun = 0;
-    reuse = 0;
-  }
-
-  public abstract boolean checkReuse(
-      CompModule world,
-      String cmdName,
-      List<String> predFacts,
-      Map<Set<String>, Set<String>> type2Sol,
-      Set<String> paramSet)
-      throws Exception;
-
-  public void RunAgain(
-      Module world,
-      String modelPath,
-      String cmdName,
-      Command cmd,
-      Map<Set<String>, Set<String>> type2Sol,
-      Set<String> paramSet)
-      throws Exception {
-
-    TimeoutThread thd = new TimeoutThread(world, cmd, modelPath);
-    thd.start();
-    thd.join(30 * 1000);
-    thd.stop();
-
-    String modelParamPath = paramRoot + SEP + cmdName;
-    String modelXmlPath = xmlRoot + SEP + cmdName + ".xml";
-    A4Solution solution = thd.sol;
-
-    if (solution != null && solution.satisfiable()) {
-      BufferedWriter out = new BufferedWriter(new FileWriter(modelParamPath));
-      for (String p : paramSet) {
-        out.write(p + "\n");
-      }
-      out.close();
-
-      solution.writeXML(modelXmlPath);
+    public ReuseSol(
+            List<SingleDepOutput> output4Dep,
+            Path modelXmlRoot,
+            Path paramRoot,
+            String modelName,
+            CompModule module,
+            Path modelPath) {
+        this.output4Dep = output4Dep;
+        this.xmlRoot = modelXmlRoot;
+        this.paramRoot = paramRoot;
+        this.modelName = modelName;
+        this.module = module;
+        this.modelPath = modelPath;
+        rerun = 0;
+        reuse = 0;
     }
-    thd.interrupt();
-  }
 
-  public void execute() throws Exception {
-    Map<Set<String>, Set<String>> type2Sol = new HashMap<Set<String>, Set<String>>();
+    public abstract boolean checkReuse(
+            CompModule world,
+            String cmdName,
+            List<String> predFacts,
+            Map<Set<String>, Set<String>> type2Sol,
+            Set<String> paramSet)
+            throws Exception;
 
-    for (SingleDepOutput sdo : output4Dep) {
-      String cmdName = sdo.cmdName;
-      List<String> predFacts = sdo.predFacts;
-      Set<String> paramSet = sdo.paramSet;
-      Command cmd = sdo.cmd;
+    public void RunAgain(
+            Module world,
+            Path modelPath,
+            String cmdName,
+            Command cmd,
+            Map<Set<String>, Set<String>> type2Sol,
+            Set<String> paramSet)
+            throws Exception {
 
-      if (!predFacts.isEmpty()) {
-        if (!checkReuse(module, cmdName, predFacts, type2Sol, paramSet)) {
-          rerun++;
-          RunAgain(module, modelPath, cmdName, cmd, type2Sol, paramSet);
-        } else {
-          reuse++;
+        TimeoutThread thd = new TimeoutThread(world, cmd, modelPath);
+        thd.start();
+        thd.join(30 * 1000);
+
+        String modelParamPath = paramRoot + SEP + cmdName;
+        String modelXmlPath = xmlRoot + SEP + cmdName + ".xml";
+        A4Solution solution = thd.sol;
+
+        if (solution != null && solution.satisfiable()) {
+            BufferedWriter out = new BufferedWriter(new FileWriter(modelParamPath));
+            for (String p : paramSet) {
+                out.write(p + "\n");
+            }
+            out.close();
+
+            solution.writeXML(modelXmlPath);
         }
-      } else {
-        rerun++;
-        RunAgain(module, modelPath, cmdName, cmd, type2Sol, paramSet);
-      }
-    }
-  }
-
-  /**
-   * thread for time out
-   *
-   * @author Wenxi Wang
-   * @version 1.0
-   */
-  public class TimeoutThread extends Thread {
-    public A4Solution sol;
-    public String modelPath;
-    public Module world;
-    public Command cmd;
-
-    public TimeoutThread(Module world, Command cmd, String modelPath) {
-      this.world = world;
-      this.cmd = cmd;
-      this.modelPath = modelPath;
+        thd.interrupt();
     }
 
-    public void run() {
-      A4Reporter rep = new A4Reporter();
-      A4Options opt = new A4Options();
-      opt.originalFilename = modelPath;
-      opt.solver = A4Options.SatSolver.SAT4J;
-      sol =
-          TranslateAlloyToKodkod.execute_commandFromBook(
-              rep, world.getAllReachableSigs(), cmd, opt);
+    public void execute() throws Exception {
+        Map<Set<String>, Set<String>> type2Sol = new HashMap<Set<String>, Set<String>>();
+
+        for (SingleDepOutput sdo : output4Dep) {
+            String cmdName = sdo.cmdName;
+            List<String> predFacts = sdo.predFacts;
+            Set<String> paramSet = sdo.paramSet;
+            Command cmd = sdo.cmd;
+
+            if (!predFacts.isEmpty()) {
+                if (!checkReuse(module, cmdName, predFacts, type2Sol, paramSet)) {
+                    rerun++;
+                    RunAgain(module, modelPath, cmdName, cmd, type2Sol, paramSet);
+                } else {
+                    reuse++;
+                }
+            } else {
+                rerun++;
+                RunAgain(module, modelPath, cmdName, cmd, type2Sol, paramSet);
+            }
+        }
     }
-  }
 }
