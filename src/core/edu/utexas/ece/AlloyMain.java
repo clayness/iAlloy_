@@ -17,8 +17,8 @@ import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Arrays;
 import java.util.Comparator;
+import java.util.Iterator;
 import java.util.List;
 import java.util.stream.Stream;
 
@@ -36,21 +36,15 @@ import parser.util.AlloyUtil;
  */
 public class AlloyMain {
 
-    public static final String SEP = File.separator;
-    public static final String DEPEND_FOLD = "dependency";
-    public static final String PARAM_FOLD = "param";
-    public static final String MODELS_FOLD = "models";
-    public static final String XML_FOLD = "xml";
-
     /** Main method */
     public static void main(String[] args) throws Exception {
         // Analyze file path
         Path modelRootPath = Paths.get(args[0]);
         String modelName = modelRootPath.getFileName().toString();
         Path csRootPath = modelRootPath.getParent().getParent();
-        Path dependRootPath = csRootPath.resolve(DEPEND_FOLD).resolve(modelName);
-        Path paramRootPath = csRootPath.resolve(PARAM_FOLD).resolve(modelName);
-        Path xmlRootPath = csRootPath.resolve(XML_FOLD).resolve(modelName);
+        Path dependRootPath = csRootPath.resolve("dependency").resolve(modelName);
+        Path paramRootPath = csRootPath.resolve("param").resolve(modelName);
+        Path xmlRootPath = csRootPath.resolve("xml").resolve(modelName);
 
         for (Path p : new Path[] { dependRootPath, paramRootPath, xmlRootPath }) {
             if (Files.exists(p)) {
@@ -65,14 +59,11 @@ public class AlloyMain {
 
         // Apply regression command selection and solution reuse, and collect the
         // results
-        long totalTime = 0;
-        int totalRerun = 0, totalReuse = 0;
-        int totalCmd = 0, totalRerunCmd = 0;
+        long totalTime = 0, totalRerun = 0, totalReuse = 0, totalCmd = 0, totalRerunCmd = 0;
 
-        File[] modelDirs = modelRootPath.toFile().listFiles();
-        Arrays.sort(modelDirs);
-        for (File modelDir : modelDirs) {
-            Path modelPath = modelDir.toPath().resolve(modelName + ".als");
+        Iterator<Path> modelDirs = Files.list(modelRootPath).sorted().iterator();
+        while (modelDirs.hasNext()) {
+            Path modelPath = modelDirs.next().resolve(modelName + ".als");
 
             // Run alloy and count time consumption
             long startTime = System.currentTimeMillis();
@@ -85,9 +76,7 @@ public class AlloyMain {
             long stopTime = System.currentTimeMillis();
             long executeTime = stopTime - startTime;
 
-            String[] tmpElementList = modelPath.toAbsolutePath().toString().split(SEP);
-            String version = tmpElementList[tmpElementList.length - 2];
-
+            String version = modelPath.getParent().getFileName().toString();
             totalCmd += module.getAllCommands().size();
             totalRerunCmd += output4Dep.size();
             totalRerun += reuseGroup.rerun;
