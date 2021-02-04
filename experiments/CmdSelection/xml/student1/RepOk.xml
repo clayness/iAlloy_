@@ -1,6 +1,6 @@
 <alloy builddate="2018-09-11T21:42:27.068Z">
 
-<instance bitwidth="4" maxseq="7" command="Run RepOk for 17" filename="/home/wenxiw/CmdSelect/Alloy_parser/experiments/CmdSelection/models/student1/v1/student1.als">
+<instance bitwidth="4" maxseq="7" command="Run RepOk for 17" filename="/Users/cstevens/Research/speculative-augmentation/iAlloy_/experiments/CmdSelection/models/student1/v1/student1.als">
 
 <sig label="seq/Int" ID="0" parentID="1" builtin="yes">
 </sig>

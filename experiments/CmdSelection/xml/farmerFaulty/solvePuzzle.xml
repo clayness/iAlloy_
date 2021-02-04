@@ -1,6 +1,6 @@
 <alloy builddate="2018-09-11T21:42:27.068Z">
 
-<instance bitwidth="4" maxseq="7" command="Run solvePuzzle for 300 expect 1" filename="/home/wenxiw/CmdSelect/Alloy_parser/experiments/CmdSelection/models/farmerFaulty/v2/farmerFaulty.als">
+<instance bitwidth="4" maxseq="7" command="Run solvePuzzle for 300 expect 1" filename="/Users/cstevens/Research/speculative-augmentation/iAlloy_/experiments/CmdSelection/models/farmerFaulty/v2/farmerFaulty.als">
 
 <sig label="seq/Int" ID="0" parentID="1" builtin="yes">
 </sig>

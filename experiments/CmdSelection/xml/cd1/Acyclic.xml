@@ -1,6 +1,6 @@
 <alloy builddate="2018-09-11T21:42:27.068Z">
 
-<instance bitwidth="4" maxseq="7" command="Run Acyclic for 50" filename="/home/huyang/Desktop/tmpialloy/CmdCommand_2019/Alloy_parser/experiments/CmdSelection/models/cd1/v1/cd1.als">
+<instance bitwidth="4" maxseq="7" command="Run Acyclic for 50" filename="/Users/cstevens/Research/speculative-augmentation/iAlloy_/experiments/CmdSelection/models/cd1/v1/cd1.als">
 
 <sig label="seq/Int" ID="0" parentID="1" builtin="yes">
 </sig>
