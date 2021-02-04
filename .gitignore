@@ -1,0 +1,4 @@
+*.swp
+ant_bin/
+alloy_example_output.xml
+
