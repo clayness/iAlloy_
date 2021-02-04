@@ -97,35 +97,11 @@ public class AlloyMain {
             totalReuse += reuseGroup.reuse;
             totalTime += executeTime;
 
-            System.out.println(
-                    modelName
-                            + ","
-                            + version
-                            + ","
-                            + module.getAllCommands().size()
-                            + ","
-                            + output4Dep.size()
-                            + ","
-                            + reuseGroup.rerun
-                            + ","
-                            + reuseGroup.reuse
-                            + ","
-                            + executeTime);
+            System.out.printf("%s,%s,%d,%d,%d,%d,%d%n", modelName, version, module.getAllCommands().size(),
+                    output4Dep.size(), reuseGroup.rerun, reuseGroup.reuse, executeTime);
         }
 
-        System.out.println(
-                modelName
-                        + ","
-                        + "v1_v2"
-                        + ","
-                        + totalCmd
-                        + ","
-                        + totalRerunCmd
-                        + ","
-                        + totalRerun
-                        + ","
-                        + totalReuse
-                        + ","
-                        + totalTime);
+        System.out.printf("%s,v1_v2,%d,%d,%d,%d,%d%n", modelName, totalCmd, totalRerunCmd, totalRerun, totalReuse,
+                totalTime);
     }
 }
