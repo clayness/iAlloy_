@@ -19,7 +19,7 @@ currentdir="$(dirname "$(realpath $0)")"
 for ModelFile in $currentdir/experiments/CmdSelection/models/*;
 do
 
-  java -cp $currentdir/src:$currentdir/ant_bin/classes/core:$currentdir/lib/base.jar:$currentdir/lib/org.alloytools.alloy.dist.jar:$currentdir/lib/org.sat4j.core.jar:$currentdir/lib/org.sat4j.core-src.jar edu.utexas.ece.AlloyMain $ModelFile
+  java -ea -cp $currentdir/src:$currentdir/ant_bin/classes/core:$currentdir/lib/base.jar:$currentdir/lib/org.alloytools.alloy.dist.jar:$currentdir/lib/org.sat4j.core.jar:$currentdir/lib/org.sat4j.core-src.jar edu.utexas.ece.AlloyMain $ModelFile
 
 done
 
@@ -27,6 +27,6 @@ done
 for ModelFile in $currentdir/experiments/CmdSelection/models/*;
 do
    
-  java -cp $currentdir/src:$currentdir/ant_bin/classes/core:$currentdir/lib/base.jar:$currentdir/lib/org.alloytools.alloy.dist.jar:$currentdir/lib/org.sat4j.core.jar:$currentdir/lib/org.sat4j.core-src.jar edu.utexas.ece.BaseLine $ModelFile
+  java -ea -cp $currentdir/src:$currentdir/ant_bin/classes/core:$currentdir/lib/base.jar:$currentdir/lib/org.alloytools.alloy.dist.jar:$currentdir/lib/org.sat4j.core.jar:$currentdir/lib/org.sat4j.core-src.jar edu.utexas.ece.BaseLine $ModelFile
 
 done
