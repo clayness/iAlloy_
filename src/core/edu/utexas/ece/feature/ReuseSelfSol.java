@@ -23,7 +23,6 @@ import edu.mit.csail.sdg.alloy4.A4Reporter;
 import edu.mit.csail.sdg.alloy4.XMLNode;
 import edu.mit.csail.sdg.ast.Expr;
 import edu.mit.csail.sdg.ast.Module;
-import edu.mit.csail.sdg.parser.CompModule;
 import edu.mit.csail.sdg.parser.CompUtil;
 import edu.mit.csail.sdg.translator.A4Solution;
 import edu.mit.csail.sdg.translator.A4SolutionReader;
@@ -39,32 +38,22 @@ public class ReuseSelfSol extends ReuseSol {
 
     public static final String SEP = File.separator;
 
-    public ReuseSelfSol(
-            List<SingleDepOutput> output4Dep,
-            Path xmlRoot,
-            Path paramRoot,
-            String modelName,
-            CompModule module,
-            Path modelPath) {
+    public ReuseSelfSol(List<SingleDepOutput> output4Dep, Path xmlRoot, Path paramRoot, String modelName,
+            Module module, Path modelPath) {
         super(output4Dep, xmlRoot, paramRoot, modelName, module, modelPath);
     }
 
-    public boolean checkReuse(
-            CompModule world,
-            String cmdName,
-            List<String> predFacts,
-            Map<Set<String>, Set<String>> type2Sol,
-            Set<String> paramSet)
-            throws Exception {
-        String modelXmlPath = xmlRoot + SEP + cmdName + ".xml";
+    public boolean checkReuse(Module world, String cmdName, List<String> predFacts,
+            Map<Set<String>, Set<String>> type2Sol, Set<String> paramSet) throws Exception {
+        Path modelXmlPath = xmlRoot.resolve(cmdName + ".xml");
 
-        File xmlFile = new File(modelXmlPath);
+        File xmlFile = modelXmlPath.toFile();
         System.out.println(xmlFile.getAbsolutePath());
         if (xmlFile.exists()) {
             System.out.println("xmlFile exists!!!!!");
             A4Reporter rep = new A4Reporter();
 
-            XMLNode xmlNode = new XMLNode(new File(modelXmlPath));
+            XMLNode xmlNode = new XMLNode(xmlFile);
             String alloySourceFilename = xmlNode.iterator().next().getAttribute("filename");
             System.out.println("alloySourceFilename: " + alloySourceFilename);
             Module deserilWorld = CompUtil.parseEverything_fromFile(rep, null, alloySourceFilename);

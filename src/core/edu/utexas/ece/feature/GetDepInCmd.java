@@ -17,11 +17,9 @@ import static parser.etc.Context.logger;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
-import java.io.File;
 import java.io.FileNotFoundException;
-import java.io.FileReader;
-import java.io.FileWriter;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -72,66 +70,56 @@ public class GetDepInCmd {
         }
 
         List<SingleDepOutput> outPut4Dep = new ArrayList<SingleDepOutput>();
-        cmd2nodes.forEach(
-                (Command, usedParagraphs) -> {
-                    String commandName = Command.label;
-                    CheckSumVisitor visitor = new CheckSumVisitor(commandName);
-                    usedParagraphs.forEach(
-                            para -> {
-                                para.accept(visitor, null);
-                            });
-                    Map<String, String> para2String = visitor.getNodeStringMap();
-                    Map<String, String> predFacts2String = visitor.getPredsFactsList();
-                    Set<String> paramSet = visitor.getCmdParamSet();
-                    List<String> predFacts = new ArrayList<String>();
+        cmd2nodes.forEach((Command, usedParagraphs) -> {
+            String commandName = Command.label;
+            CheckSumVisitor visitor = new CheckSumVisitor(commandName);
+            usedParagraphs.forEach(para -> para.accept(visitor, null));
+            Map<String, String> para2String = visitor.getNodeStringMap();
+            Map<String, String> predFacts2String = visitor.getPredsFactsList();
+            Set<String> paramSet = visitor.getCmdParamSet();
+            List<String> predFacts = new ArrayList<String>();
 
-                    Map<String, String> para2Hash = new HashMap<String, String>();
-                    for (String k : para2String.keySet()) {
-                        para2Hash.put(k, String.valueOf(para2String.get(k).hashCode()));
+            Map<String, String> para2Hash = new HashMap<String, String>();
+            for (String k : para2String.keySet()) {
+                para2Hash.put(k, String.valueOf(para2String.get(k).hashCode()));
+            }
+
+            SortedSet<String> sortedKeys = new TreeSet<>(para2String.keySet());
+            String mcFileName = commandName + ".dep";
+            Path mcPath = dependRoot.resolve(mcFileName);
+            if (Files.exists(mcPath)) {
+                Map<String, String> oldPara2Hash = new HashMap<String, String>();
+                try (BufferedReader bufferedReader = Files.newBufferedReader(mcPath)) {
+                    String line;
+                    while ((line = bufferedReader.readLine()) != null) {
+                        String oldKey = line.split(" ")[0];
+                        String oldHash = line.split(" ")[1];
+                        oldPara2Hash.put(oldKey, oldHash);
                     }
 
-                    SortedSet<String> sortedKeys = new TreeSet<>(para2String.keySet());
-                    String mcFileName = commandName + ".dep";
-                    String mcPath = dependRoot + File.separator + mcFileName;
-                    File mcFile = new File(mcPath);
-
-                    if (mcFile.exists()) {
-                        Map<String, String> oldPara2Hash = new HashMap<String, String>();
-                        FileReader fileReader;
-                        try {
-                            fileReader = new FileReader(mcFile);
-                            BufferedReader bufferedReader = new BufferedReader(fileReader);
-                            String line;
-                            while ((line = bufferedReader.readLine()) != null) {
-                                String oldKey = line.split(" ")[0];
-                                String oldHash = line.split(" ")[1];
-                                oldPara2Hash.put(oldKey, oldHash);
+                    if (!twoMapsEqual(oldPara2Hash, para2Hash)) {
+                        if (twoMapsCmdEqual(oldPara2Hash, para2Hash)
+                                && twoMapsSigEqual(oldPara2Hash, para2Hash)) {
+                            for (String para : predFacts2String.keySet()) {
+                                predFacts.add(predFacts2String.get(para));
                             }
-                            fileReader.close();
-
-                            if (!twoMapsEqual(oldPara2Hash, para2Hash)) {
-                                if (twoMapsCmdEqual(oldPara2Hash, para2Hash)
-                                        && twoMapsSigEqual(oldPara2Hash, para2Hash)) {
-                                    for (String para : predFacts2String.keySet()) {
-                                        predFacts.add(predFacts2String.get(para));
-                                    }
-                                }
-                                SingleDepOutput sdo = new SingleDepOutput(commandName, Command, paramSet, predFacts);
-                                outPut4Dep.add(sdo);
-
-                                WritetoDepFile(mcPath, sortedKeys, para2Hash);
-                            }
-                        } catch (FileNotFoundException e) {
-                            e.printStackTrace();
-                        } catch (IOException e) {
-                            e.printStackTrace();
                         }
-                    } else {
-                        WritetoDepFile(mcPath, sortedKeys, para2Hash);
                         SingleDepOutput sdo = new SingleDepOutput(commandName, Command, paramSet, predFacts);
                         outPut4Dep.add(sdo);
+
+                        WritetoDepFile(mcPath, sortedKeys, para2Hash);
                     }
-                });
+                } catch (FileNotFoundException e) {
+                    e.printStackTrace();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            } else {
+                WritetoDepFile(mcPath, sortedKeys, para2Hash);
+                SingleDepOutput sdo = new SingleDepOutput(commandName, Command, paramSet, predFacts);
+                outPut4Dep.add(sdo);
+            }
+        });
 
         return outPut4Dep;
     }
@@ -149,15 +137,11 @@ public class GetDepInCmd {
         cmd2nodes.put(c.getCommand(), usedNodes);
     }
 
-    private void WritetoDepFile(
-            String mcPath, SortedSet<String> sortedKeys, Map<String, String> para2Hash) {
-        try {
-            BufferedWriter out = new BufferedWriter(new FileWriter(mcPath));
+    private void WritetoDepFile(Path mcPath, SortedSet<String> sortedKeys, Map<String, String> para2Hash) {
+        try (BufferedWriter out = Files.newBufferedWriter(mcPath)) {
             for (String key : sortedKeys) {
                 out.write(key + " " + para2Hash.get(key) + "\n");
             }
-
-            out.close();
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -167,7 +151,6 @@ public class GetDepInCmd {
         if (oldM == newM)
             return true;
         if (oldM.size() != newM.size()) {
-            // System.out.println("size diff!!!!!!!!!!!!!!!!!!!");
             return false;
         }
 
@@ -176,8 +159,6 @@ public class GetDepInCmd {
             String newv = newM.get(oldk);
 
             if (!oldv.equals(newv)) {
-                // System.out.println("value diff!!!!!!!: " + "oldv: " + oldv + " newv: "+
-                // newv);
                 return false;
             }
             oldk.startsWith("sig");
@@ -242,8 +223,7 @@ public class GetDepInCmd {
             }
         }
         for (Assertion assertion : modelUnit.getAssertDeclList()) {
-            if (assertion
-                         .getName()
+            if (assertion.getName()
                          .replaceAll("\\" + Names.DOLLAR, Names.UNDERSCORE)
                          .equals(commandName)) {
                 return assertion;
@@ -265,8 +245,7 @@ public class GetDepInCmd {
         public Set<String> paramSet;
         public List<String> predFacts;
 
-        public SingleDepOutput(
-                String cmdName, Command cmd, Set<String> paramSet, List<String> predFacts) {
+        public SingleDepOutput(String cmdName, Command cmd, Set<String> paramSet, List<String> predFacts) {
             this.cmd = cmd;
             this.cmdName = cmdName;
             this.paramSet = paramSet;

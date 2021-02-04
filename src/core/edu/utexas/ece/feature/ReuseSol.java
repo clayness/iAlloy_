@@ -15,7 +15,7 @@ package edu.utexas.ece.feature;
 
 import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileWriter;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.List;
@@ -24,7 +24,6 @@ import java.util.Set;
 
 import edu.mit.csail.sdg.ast.Command;
 import edu.mit.csail.sdg.ast.Module;
-import edu.mit.csail.sdg.parser.CompModule;
 import edu.mit.csail.sdg.translator.A4Solution;
 import edu.utexas.ece.feature.GetDepInCmd.SingleDepOutput;
 
@@ -42,18 +41,13 @@ public abstract class ReuseSol {
     public Path xmlRoot;
     public Path paramRoot;
     public String modelName;
-    public CompModule module;
+    public Module module;
     public Path modelPath;
     public int rerun;
     public int reuse;
 
-    public ReuseSol(
-            List<SingleDepOutput> output4Dep,
-            Path modelXmlRoot,
-            Path paramRoot,
-            String modelName,
-            CompModule module,
-            Path modelPath) {
+    public ReuseSol(List<SingleDepOutput> output4Dep, Path modelXmlRoot, Path paramRoot, String modelName,
+            Module module, Path modelPath) {
         this.output4Dep = output4Dep;
         this.xmlRoot = modelXmlRoot;
         this.paramRoot = paramRoot;
@@ -64,39 +58,27 @@ public abstract class ReuseSol {
         reuse = 0;
     }
 
-    public abstract boolean checkReuse(
-            CompModule world,
-            String cmdName,
-            List<String> predFacts,
-            Map<Set<String>, Set<String>> type2Sol,
-            Set<String> paramSet)
-            throws Exception;
+    public abstract boolean checkReuse(Module world, String cmdName, List<String> predFacts,
+            Map<Set<String>, Set<String>> type2Sol, Set<String> paramSet) throws Exception;
 
-    public void RunAgain(
-            Module world,
-            Path modelPath,
-            String cmdName,
-            Command cmd,
-            Map<Set<String>, Set<String>> type2Sol,
-            Set<String> paramSet)
-            throws Exception {
+    public void RunAgain(Module world, Path modelPath, String cmdName, Command cmd,
+            Map<Set<String>, Set<String>> type2Sol, Set<String> paramSet) throws Exception {
 
         TimeoutThread thd = new TimeoutThread(world, cmd, modelPath);
         thd.start();
         thd.join(30 * 1000);
 
-        String modelParamPath = paramRoot + SEP + cmdName;
-        String modelXmlPath = xmlRoot + SEP + cmdName + ".xml";
+        Path modelParamPath = paramRoot.resolve(cmdName);
+        Path modelXmlPath = xmlRoot.resolve(cmdName + ".xml");
         A4Solution solution = thd.sol;
 
         if (solution != null && solution.satisfiable()) {
-            BufferedWriter out = new BufferedWriter(new FileWriter(modelParamPath));
-            for (String p : paramSet) {
-                out.write(p + "\n");
+            try (BufferedWriter out = Files.newBufferedWriter(modelParamPath)) {
+                for (String p : paramSet) {
+                    out.write(p + "\n");
+                }
             }
-            out.close();
-
-            solution.writeXML(modelXmlPath);
+            solution.writeXML(modelXmlPath.toString());
         }
         thd.interrupt();
     }

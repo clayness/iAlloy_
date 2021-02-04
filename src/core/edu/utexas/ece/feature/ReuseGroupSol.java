@@ -27,7 +27,6 @@ import edu.mit.csail.sdg.alloy4.A4Reporter;
 import edu.mit.csail.sdg.alloy4.XMLNode;
 import edu.mit.csail.sdg.ast.Expr;
 import edu.mit.csail.sdg.ast.Module;
-import edu.mit.csail.sdg.parser.CompModule;
 import edu.mit.csail.sdg.parser.CompUtil;
 import edu.mit.csail.sdg.translator.A4Solution;
 import edu.mit.csail.sdg.translator.A4SolutionReader;
@@ -42,23 +41,13 @@ import edu.utexas.ece.feature.GetDepInCmd.SingleDepOutput;
  */
 public class ReuseGroupSol extends ReuseSol {
 
-    public ReuseGroupSol(
-            List<SingleDepOutput> output4Dep,
-            Path xmlRoot,
-            Path paramRoot,
-            String modelName,
-            CompModule module,
-            Path modelPath) {
+    public ReuseGroupSol(List<SingleDepOutput> output4Dep, Path xmlRoot, Path paramRoot, String modelName,
+            Module module, Path modelPath) {
         super(output4Dep, xmlRoot, paramRoot, modelName, module, modelPath);
     }
 
-    public boolean checkReuse(
-            CompModule world,
-            String cmdName,
-            List<String> predFacts,
-            Map<Set<String>, Set<String>> type2Sol,
-            Set<String> paramSet)
-            throws Exception {
+    public boolean checkReuse(Module world, String cmdName, List<String> predFacts,
+            Map<Set<String>, Set<String>> type2Sol, Set<String> paramSet) throws Exception {
         File folder = paramRoot.toFile();
         File[] listOfFiles = folder.listFiles();
 
@@ -74,7 +63,7 @@ public class ReuseGroupSol extends ReuseSol {
         }
 
         for (String cmdname : CandFileNames) {
-            String modelXmlPath = xmlRoot + File.separator + cmdname + ".xml";
+            Path modelXmlPath = xmlRoot.resolve(cmdname + ".xml");
             if (checkReuse4SingleXml(modelXmlPath, predFacts)) {
                 return true;
             }
@@ -82,13 +71,13 @@ public class ReuseGroupSol extends ReuseSol {
         return false;
     }
 
-    public boolean checkReuse4SingleXml(String modelXmlPath, List<String> predFacts)
+    public boolean checkReuse4SingleXml(Path modelXmlPath, List<String> predFacts)
             throws IOException {
-        File xmlFile = new File(modelXmlPath);
+        File xmlFile = modelXmlPath.toFile();
         if (xmlFile.exists()) {
             A4Reporter rep = new A4Reporter();
 
-            XMLNode xmlNode = new XMLNode(new File(modelXmlPath));
+            XMLNode xmlNode = new XMLNode(xmlFile);
             String alloySourceFilename = xmlNode.iterator().next().getAttribute("filename");
 
             Module deserilWorld = CompUtil.parseEverything_fromFile(rep, null, alloySourceFilename);
@@ -115,14 +104,11 @@ public class ReuseGroupSol extends ReuseSol {
         Set<String> paramSet = new HashSet<String>();
         BufferedReader br = new BufferedReader(new FileReader(fileName));
         try {
-
             String line = br.readLine();
-
             while (line != null) {
                 paramSet.add(line);
                 line = br.readLine();
             }
-
         } finally {
             br.close();
         }
