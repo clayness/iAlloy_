@@ -169,23 +169,4 @@ public class AlloyMain {
     }
   }
 
-  /**
-   * Copy from sourse file to destination file
-   *
-   * @param srcFile: source file
-   * @param dstFile: destination file
-   */
-  public static void copy(File srcFile, File dstFile) throws IOException {
-    FileChannel srcChannel = new FileInputStream(srcFile).getChannel();
-    FileChannel dstChannel = new FileOutputStream(dstFile).getChannel();
-    if (dstChannel != null && srcChannel != null) {
-      dstChannel.transferFrom(srcChannel, 0, srcChannel.size());
-    }
-    if (srcChannel != null) {
-      srcChannel.close();
-    }
-    if (dstChannel != null) {
-      dstChannel.close();
-    }
-  }
 }
